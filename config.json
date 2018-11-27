@@ -1,0 +1,23 @@
+{
+    "host": "0.0.0.0",
+    "port": 3001,
+    "logpath": "logger.php",
+    "gameWidth": 40,
+    "gameHeight": 40,
+    "playerCount": 4,
+    "adminPass": "DEFAULT",
+    "slowBase": 4.5,
+    "networkUpdateFactor": 40,
+    "maxHeartbeatInterval": 5000,
+    "foodUniformDisposition": true,
+    "virusUniformDisposition": false,
+    "newPlayerInitialPosition": "farthest",
+    "sqlinfo":{
+      "connectionLimit": 100,
+      "host": "DEFAULT",
+      "user": "root",
+      "password": "DEFAULT",
+      "database": "DEFAULT",
+      "debug": false
+    }
+}

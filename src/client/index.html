@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Meta Properties -->
+    <meta charset="UTF-8">
+    <title>Open Agar</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+<div id="gameAreaWrapper">
+    <div class="canvas-container">
+        <canvas tabindex="1" id="cvs"></canvas>
+    </div>
+        <div class="controls">
+			<h2>Upcoming Shapes:</h2>
+			<div class="upcoming-shapes">
+				<div class="button-bar">
+					<span class="left-button">
+						<button class="site rotate" id="leftRotateButton" style="float:right">L</button>
+					</span>
+					<span class="center-button">
+						<button id="nextShapeButton">Next Shape</button>
+					</span>
+					<span class="right-button">
+						<button class="site rotate" id="rightRotateButton" style="float:left">R</button>
+					</span>
+				</div>
+               	<canvas tabindex="2" id="cvs2"></canvas>
+			</div>
+        </div>
+    </div>
+    <!-- JS -->
+    <script src="//code.jquery.com/jquery-2.2.0.min.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
