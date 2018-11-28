@@ -1,6 +1,7 @@
 var io = require('socket.io-client');
 var Canvas = require('./canvas');
 var global = require('./global');
+var $ = require("jquery");
 
 var socket;
 var reason;
@@ -23,11 +24,15 @@ var canvas2 = new Canvas({id: 'cvs2', addEvents: false});
 var c2 = canvas2.cv;
 var graph2 = c2.getContext('2d');
 
+var nextShapeBtn;
+var lRotateBtn;
+var rRotateBtn;
+
 window.onload = function() {
 
-	const nextShapeBtn = document.getElementById('nextShapeButton');
-	const lRotateBtn = document.getElementById('leftRotateButton');
-	const rRotateBtn = document.getElementById('rightRotateButton');
+	nextShapeBtn = document.getElementById('nextShapeButton');
+	lRotateBtn = document.getElementById('leftRotateButton');
+	rRotateBtn = document.getElementById('rightRotateButton');
 
 	nextShapeBtn.onclick = function() {
 		socket.emit('next-shape');
@@ -134,6 +139,16 @@ function setupSocket(socket) {
 		if( player ) {
 			var p = players.find((x) => x.id == player.id);
 			if( p ) player = p;
+
+			if( data.canStartGame && data.playersTurn && data.playersTurn.id == player.id ) {
+                $(nextShapeBtn).attr("disabled", false);
+                $(lRotateBtn).attr("disabled", false);
+                $(rRotateBtn).attr("disabled", false);
+            } else {
+                $(nextShapeBtn).attr("disabled", true);
+                $(lRotateBtn).attr("disabled", true);
+                $(rRotateBtn).attr("disabled", true);
+			}
 		}
 
 		gameLoop();
@@ -141,9 +156,9 @@ function setupSocket(socket) {
 }
 
 
-function drawgrid() {
+function drawGrid() {
 	let cursor = {x: 0, y: 0};
-	gameGrid.forEach((grid) => {
+    gameGrid.forEach((grid) => {
 		graph.lineWidth = 1;
 		graph.strokeStyle = global.lineColor;
 		graph.fillStyle = global.backgroundColor;
@@ -157,7 +172,7 @@ function drawgrid() {
 			graph.fillStyle = 'hsl(' + grid.lockedPlayer.hue + ', 100%, 50%, 1)';
 		}
 
-		if (grid.type == 4) {
+		if (grid.type == 2 || grid.type == 4) {
 			graph.fillRect(cursor.x, cursor.y, global.gridSize, global.gridSize);
 			graph.strokeRect(cursor.x, cursor.y, global.gridSize, global.gridSize);
 
@@ -197,12 +212,12 @@ function drawgrid() {
 	graph.globalAlpha = 1;
 }
 
-function drawnextshapes() {
+function drawNextShapes() {
 
 	graph2.fillStyle = global.backgroundColor;
 	graph2.fillRect(0, 0, c2.width, c2.height);
-	if( player.nextShapes && player.nextShapes.length > 0 ) {
-		var shape = player.nextShapes[0]; // TODO we only allow 1 shape at a time right now.
+	if( player.nextShape ) {
+		var shape = player.nextShape;
 
 		graph2.lineWidth = 1;
 		graph2.strokeStyle = global.lineColor;
@@ -232,10 +247,10 @@ function gameLoop() {
             graph.fillStyle = global.backgroundColor;
             graph.fillRect(0, 0, global.screenWidth, global.screenHeight);
 
-            drawgrid();
+            drawGrid();
 
             if( player ) {
-				drawnextshapes();
+				drawNextShapes();
 			}
 
             socket.emit('0', window.canvas.target); // playerSendTarget "Heartbeat".

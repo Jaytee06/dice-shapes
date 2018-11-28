@@ -20,6 +20,7 @@ var grid = [];
 var users = [];
 var sockets = {};
 var playersTurn = 0;
+var canStartGame = false;
 
 if(s.host !== "DEFAULT") {
     var pool = sql.createConnection({
@@ -47,7 +48,7 @@ io.on('connection', function (socket) {
 		hue: Math.round(Math.random() * 360),
 		lastHeartbeat: new Date().getTime(),
 		index: 0,
-		nextShapes: []
+		nextShape: null
 	};
 
 	socket.on('gotit', function (player) {
@@ -70,7 +71,8 @@ io.on('connection', function (socket) {
 			users.push(currentPlayer);
 
 			if( users.length == c.playerCount ) {
-				io.emit('startGame', {playersTurn: users[playersTurn]});
+				//io.emit('startGame', {playersTurn: users[playersTurn]});
+				canStartGame = true;
 			}
 
 			io.emit('playerJoin', {name: currentPlayer.name});
@@ -111,7 +113,7 @@ io.on('connection', function (socket) {
 		//console.log(data);
 
 		var user = users.find((x => x.id == socket.id));
-		if( user && user.nextShapes && user.nextShapes.length > 0 ) {
+		if( user && user.nextShape ) {
 
 			// reset possible
 			var gs = grid.filter((x) => x.possiblePlayer && x.possiblePlayer.id == user.id);
@@ -149,7 +151,7 @@ io.on('connection', function (socket) {
 			//
 			// if (g) {
 				const coords = {x: cell.row, y: cell.col};
-				const shape = user.nextShapes[0];
+				const shape = user.nextShape;
 
 				let canMove = true;
 				let shapeGrids = [];
@@ -242,7 +244,9 @@ io.on('connection', function (socket) {
 						));
 
 						if( g ) {
-							shapeGrids.forEach((x) => x.possiblePlayer = u);
+							shapeGrids.forEach((x) => {
+								x.possiblePlayer = u;
+							});
 							u.canPlaceShape = true;
 							break;
 						} else {
@@ -264,7 +268,7 @@ io.on('connection', function (socket) {
 
 		let user = users.find((x => x.id == socket.id));
 		console.log('clicked', user);
-		if( user && user.canPlaceShape ) {
+		if( user && user.canPlaceShape && users[playersTurn].id == user.id ) {// make sure it is the users turn
 
 			let possibleGrids = grid.filter((x) => x.possiblePlayer && x.possiblePlayer.id == user.id);
 			possibleGrids.forEach((g) => {
@@ -272,21 +276,23 @@ io.on('connection', function (socket) {
 				g.possiblePlayer = null;
 			});
 
-			user.nextShapes.pop();
+			user.nextShape = null;
+
+			playersTurn = (playersTurn + 1) % c.playerCount;
 		}
 
 	});
 
 	socket.on('next-shape', function() {
-		if( c.playerCount == 4 ) {
+		if( c.playerCount == 2 || c.playerCount == 4 ) {
 			var shape = {w:0, h:0};
 			shape.w = Math.round(Math.random() * 5) + 1;
 			shape.h = Math.round(Math.random() * 5) + 1;
 
 			console.log('shape', shape);
 			var user = users.find((x => x.id == socket.id));
-			if( user ) {
-				user.nextShapes.push(shape);
+			if( user && user.nextShape == null ) {
+				user.nextShape = shape;
 			}
 		}
 	});
@@ -294,9 +300,9 @@ io.on('connection', function (socket) {
 	socket.on('rotate-shape', function() {
 
 		let user = users.find((x => x.id == socket.id));
-		if( user && user.nextShapes && user.nextShapes.length > 0 ) {
-			const shape = user.nextShapes[0];
-			user.nextShapes[0] = {w:shape.h, h:shape.w};
+		if( user && user.nextShape ) {
+			const shape = user.nextShape;
+			user.nextShape = {w:shape.h, h:shape.w};
 		}
 	});
 });
@@ -318,11 +324,11 @@ function setUpGame(type) {
 
 			if( i == 0 && j == 0 ) {
 				g.startingPlayer = users.find(x => x.index == 0);
-			} else if( i == c.gameHeight-1 && j == 0 ) {
+			} else if( i == c.gameHeight-1 && j == c.gameWidth - 1 ) {
 				g.startingPlayer = users.find(x => x.index == 1);
 			} else if( i == 0 && j == c.gameWidth - 1) {
 				g.startingPlayer = users.find(x => x.index == 2);
-			} else if( i == c.gameHeight-1 && j == c.gameWidth - 1) {
+			} else if( i == c.gameHeight-1 && j == 0 ) {
 				g.startingPlayer = users.find(x => x.index == 3);
 			}
 
@@ -351,7 +357,11 @@ function moveloop() {
 
 
 function sendUpdates() {
-	io.sockets.emit('state', {grid:grid, users:users});
+	var data = {grid:grid, users:users, canStartGame: canStartGame};
+	if( users && users.length > 0 && users[playersTurn] ) {
+		data.playersTurn = users[playersTurn];
+	}
+	io.sockets.emit('state', data);
 }
 
 setInterval(moveloop, 1000 / 60);
