@@ -125,29 +125,29 @@ io.on('connection', function (socket) {
 				row: Math.max(0, Math.min(c.gameHeight - 1, Math.ceil(c.gameHeight * data.y) - 1))
 			};
 
-			var g = grid.find((x) => x.row == cell.row && x.col == cell.col && ((!x.lockedPlayer && x.startingPlayer && x.startingPlayer.id == user.id) || (x.lockedPlayer && x.lockedPlayer.id == user.id)));
-			// check that they are next to a cell they already own
-
-			// top
-			if (cell.row > 0 && !g) {
-				g = grid.find((x) => x.row == cell.row - 1 && x.col == cell.col && x.lockedPlayer && x.lockedPlayer.id == user.id);
-			}
-			// right
-			if (cell.col < c.gameWidth && !g) {
-				g = grid.find((x) => x.row == cell.row && x.col == cell.col + 1 && x.lockedPlayer && x.lockedPlayer.id == user.id);
-			}
-
-			// bottom
-			if (cell.row < c.gameHeight && !g) {
-				g = grid.find((x) => x.row == cell.row + 1 && x.col == cell.col && x.lockedPlayer && x.lockedPlayer.id == user.id);
-			}
-
-			// left
-			if (cell.col > 0 && !g) {
-				g = grid.find((x) => x.row == cell.row && x.col == cell.col - 1 && x.lockedPlayer && x.lockedPlayer.id == user.id);
-			}
-
-			if (g) {
+			// var g = grid.find((x) => x.row == cell.row && x.col == cell.col && ((!x.lockedPlayer && x.startingPlayer && x.startingPlayer.id == user.id) || (x.lockedPlayer && x.lockedPlayer.id == user.id)));
+			// // check that they are next to a cell they already own
+			//
+			// // top
+			// if (cell.row > 0 && !g) {
+			// 	g = grid.find((x) => x.row == cell.row - 1 && x.col == cell.col && x.lockedPlayer && x.lockedPlayer.id == user.id);
+			// }
+			// // right
+			// if (cell.col < c.gameWidth && !g) {
+			// 	g = grid.find((x) => x.row == cell.row && x.col == cell.col + 1 && x.lockedPlayer && x.lockedPlayer.id == user.id);
+			// }
+			//
+			// // bottom
+			// if (cell.row < c.gameHeight && !g) {
+			// 	g = grid.find((x) => x.row == cell.row + 1 && x.col == cell.col && x.lockedPlayer && x.lockedPlayer.id == user.id);
+			// }
+			//
+			// // left
+			// if (cell.col > 0 && !g) {
+			// 	g = grid.find((x) => x.row == cell.row && x.col == cell.col - 1 && x.lockedPlayer && x.lockedPlayer.id == user.id);
+			// }
+			//
+			// if (g) {
 				const coords = {x: cell.row, y: cell.col};
 				const shape = user.nextShapes[0];
 
@@ -160,76 +160,103 @@ io.on('connection', function (socket) {
 				// if( shapeGrids.length == 0 ) shapeGrids = grid.filter((x) => !x.lockedPlayer && x.row <= coords.x && x.row > coords.x-shape.h && x.col >= coords.y && x.col < coords.y+shape.w); //up-to-right
 				// if( shapeGrids.length == 0 ) shapeGrids = grid.filter((x) => !x.lockedPlayer && x.row <= coords.x && x.row > coords.x-shape.h && x.col <= coords.y && x.col > coords.y-shape.w); //up-to-left
 
-				for (let i = 0; i < shape.h; i++) { // down-to-right
-					const ii = i;
-					for (let j = 0; j < shape.w; j++) {
-						const jj = j;
-						let fg = grid.find((x) => x.row == coords.x + ii && x.col == coords.y + jj && !x.lockedPlayer);
-						if (fg) {
-							shapeGrids.push(fg);
+				// shift the shape so it's centered on the mouse
+				const shift = {w:0, h:0};
+				do {
+					const u = user;
+					for (let i = -shift.h; i < shape.h - shift.h; i++) { // down-to-right
+						const ii = i;
+						for (let j = -shift.w; j < shape.w - shift.w; j++) {
+							const jj = j;
+							let fg = grid.find((x) => x.row == coords.x + ii && x.col == coords.y + jj && !x.lockedPlayer);
+							if (fg) {
+								shapeGrids.push(fg);
+							} else {
+								canMove = false;
+							}
+						}
+					}
+					if (!canMove) {
+						canMove = true;
+						shapeGrids = [];
+						for (let i = -shift.h; i < shape.h - shift.h; i++) { // down-to-left
+							const ii = i;
+							for (let j = -shift.w; j < shape.w - shift.w; j++) {
+								const jj = j;
+								let fg = grid.find((x) => x.row == coords.x + ii && x.col == coords.y - jj && !x.lockedPlayer);
+								if (fg) {
+									shapeGrids.push(fg);
+								} else {
+									canMove = false;
+								}
+							}
+						}
+					}
+					if (!canMove) {
+						canMove = true;
+						shapeGrids = [];
+						for (let i = -shift.h; i < shape.h - shift.h; i++) { // up-to-right
+							const ii = i;
+							for (let j = -shift.w; j < shape.w - shift.w; j++) {
+								const jj = j;
+								let fg = grid.find((x) => x.row == coords.x - ii && x.col == coords.y + jj && !x.lockedPlayer);
+								if (fg) {
+									shapeGrids.push(fg);
+								} else {
+									canMove = false;
+								}
+							}
+						}
+					}
+					if (!canMove) {
+						canMove = true;
+						shapeGrids = [];
+						for (let i = -shift.h; i < shape.h - shift.h; i++) { // up-to-left
+							const ii = i;
+							for (let j = -shift.w; j < shape.w - shift.w; j++) {
+								const jj = j;
+								let fg = grid.find((x) => x.row == coords.x - ii && x.col == coords.y - jj && !x.lockedPlayer);
+								if (fg) {
+									shapeGrids.push(fg);
+								} else {
+									canMove = false;
+								}
+							}
+						}
+					}
+
+					if ( canMove ) {
+
+						// check if the shape is next to a square the user has or contains the starting position
+						const minRow = shapeGrids.map(x => x.row).reduce((prev, curr) =>  Math.min(prev, curr));
+						const maxRow = shapeGrids.map(x => x.row).reduce((prev, curr) => Math.max(prev, curr));
+						const minCol = shapeGrids.map(x => x.col).reduce((prev, curr) =>  Math.min(prev, curr));
+						const maxCol = shapeGrids.map(x => x.col).reduce((prev, curr) =>  Math.max(prev, curr));
+
+						const g = grid.find((x) => (
+							(x.row == minRow - 1 && x.col >= minCol && x.col <= maxCol && x.lockedPlayer && x.lockedPlayer.id == u.id) || // above
+							(x.row == maxRow + 1 && x.col >= minCol && x.col <= maxCol && x.lockedPlayer && x.lockedPlayer.id == u.id) || // bottom
+							(x.col == minCol - 1 && x.row >= minRow && x.row <= maxRow && x.lockedPlayer && x.lockedPlayer.id == u.id) || // left
+							(x.col == maxCol + 1 && x.row >= minRow && x.row <= maxRow && x.lockedPlayer && x.lockedPlayer.id == u.id) || // right
+							(x.row >= minRow && x.row <= maxRow && x.col >= minCol && x.col <= maxCol && x.startingPlayer && x.startingPlayer.id == u.id)  // contains starting position
+						));
+
+						if( g ) {
+							shapeGrids.forEach((x) => x.possiblePlayer = u);
+							u.canPlaceShape = true;
+							break;
 						} else {
-							canMove = false;
+							u.canPlaceShape = false;
+							shapeGrids = [];
 						}
+					} else {
+						// no more moves?
+						u.canPlaceShape = false;
+						shapeGrids = [];
 					}
-				}
-				if( !canMove ) {
-					canMove = true;
-					shapeGrids = [];
-					for (let i = 0; i < shape.h; i++) { // down-to-left
-						const ii = i;
-						for (let j = 0; j < shape.w; j++) {
-							const jj = j;
-							let fg = grid.find((x) => x.row == coords.x + ii && x.col == coords.y - jj && !x.lockedPlayer);
-							if (fg) {
-								shapeGrids.push(fg);
-							} else {
-								canMove = false;
-							}
-						}
-					}
-				}
-				if( !canMove ) {
-					canMove = true;
-					shapeGrids = [];
-					for (let i = 0; i < shape.h; i++) { // up-to-right
-						const ii = i;
-						for (let j = 0; j < shape.w; j++) {
-							const jj = j;
-							let fg = grid.find((x) => x.row == coords.x - ii && x.col == coords.y + jj && !x.lockedPlayer);
-							if (fg) {
-								shapeGrids.push(fg);
-							} else {
-								canMove = false;
-							}
-						}
-					}
-				}
-				if( !canMove ) {
-					canMove = true;
-					shapeGrids = [];
-					for (let i = 0; i < shape.h; i++) { // up-to-left
-						const ii = i;
-						for (let j = 0; j < shape.w; j++) {
-							const jj = j;
-							let fg = grid.find((x) => x.row == coords.x - ii && x.col == coords.y - jj && !x.lockedPlayer);
-							if (fg) {
-								shapeGrids.push(fg);
-							} else {
-								canMove = false;
-							}
-						}
-					}
-				}
-
-				if ( canMove ) {
-					shapeGrids.forEach((x) => x.possiblePlayer = user);
-					user.canPlaceShape = true;
-				} else {
-					// no more moves?
-					user.canPlaceShape = false;
-				}
-
-			}
+					if( shift.w < shape.w ) shift.w++; else shift.h++;
+				} while ( shift.w < shape.h-1 && shift.h < shape.h-1 );
+			//}
 		}
 	});
 
